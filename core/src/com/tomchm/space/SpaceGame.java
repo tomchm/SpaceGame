@@ -100,14 +100,14 @@ public class SpaceGame extends ApplicationAdapter {
 		roomAverageY = ((roomAverageY * (i-1)) + y) / i;
 	}
 	
-	private void createTunnels(){
+	private void addTunnels(){
 		int n = rooms.length;
 		Random r = new Random();
 		
 		for(int i=0; i < n; i++){
 			int x = r.nextInt(rooms[i].getWidth()) + rooms[i].getLeft();
 			int y = r.nextInt(rooms[i].getLength()) + rooms[i].getBottom();
-			Tunneler tunnel = new Tunneler(x, y);
+			new Tunneler(x, y, grid);
 		}
 	}
 	
@@ -124,6 +124,7 @@ public class SpaceGame extends ApplicationAdapter {
 		grid = new char[128][128];
 		blankGrid();
 		addRooms(75);
+		addTunnels();
 	}
 	
 
@@ -136,6 +137,9 @@ public class SpaceGame extends ApplicationAdapter {
 			for (int j=0; j < grid[0].length; j++){
 				if(grid[i][j] == '.'){
 					batch.draw(black, i*8, j*8);
+				}
+				else if(grid[i][j] == 'X'){
+					batch.draw(white, i*8, j*8);
 				}
 				else{
 					batch.draw(red, i*8, j*8);
