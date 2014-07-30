@@ -110,6 +110,24 @@ public class Room {
 			}
 		}
 		
+		if(left <= room.right+1 && left >= room.left-1){
+			if(bottom >= room.bottom-1 && bottom <= room.top+1){
+				return false;
+			}
+			else if(top >= room.bottom-1 && top <= room.top+1){
+				return false;
+			}
+		}
+		
+		if(right <= room.right+1 && right >= room.left-1){
+			if(bottom >= room.bottom-1 && bottom <= room.top+1){
+				return false;
+			}
+			else if(top >= room.bottom-1 && top <= room.top+1){
+				return false;
+			}
+		}
+		
 		return true;
 	}
 }

@@ -16,11 +16,12 @@ public class SpaceGame extends ApplicationAdapter{
 	Texture img;
 	TextureRegion[][] regions;
 	TextureRegion black, red, blue, white;
+	TextureRegion[] shade = new TextureRegion[8];
 	
 	char[][] grid;
 	Room[] rooms;
 	
-	int totalFails = 0, totalConnects = 0, randomDoubleValue = 15;
+	int totalFails = 0, totalConnects = 0, randomDoubleValue = 5, maxConnectivity = 1;
 	private static int maxConnects = 2000000;
 	double roomAverageX = 0, roomAverageY = 0;
 	
@@ -108,10 +109,17 @@ public class SpaceGame extends ApplicationAdapter{
 		int n = connections.size();
 		Random r = new Random();
 		for(int i=0; i < n; i++){
-			int x = r.nextInt(connections.get(i).getRoomA().getWidth()) + connections.get(i).getRoomA().getLeft();
-			int y = r.nextInt(connections.get(i).getRoomA().getLength()) + connections.get(i).getRoomA().getBottom();
-			int targetX = r.nextInt(connections.get(i).getRoomB().getWidth()) + connections.get(i).getRoomB().getLeft();
-			int targetY = r.nextInt(connections.get(i).getRoomB().getLength()) + connections.get(i).getRoomB().getBottom();
+			//int x = r.nextInt(connections.get(i).getRoomA().getWidth()) + connections.get(i).getRoomA().getLeft();
+			//int y = r.nextInt(connections.get(i).getRoomA().getLength()) + connections.get(i).getRoomA().getBottom();
+			//int targetX = r.nextInt(connections.get(i).getRoomB().getWidth()) + connections.get(i).getRoomB().getLeft();
+			//int targetY = r.nextInt(connections.get(i).getRoomB().getLength()) + connections.get(i).getRoomB().getBottom();
+			
+			int x = connections.get(i).getRoomA().getX();
+			int y = connections.get(i).getRoomA().getY();
+			int targetX = connections.get(i).getRoomB().getX();
+			int targetY = connections.get(i).getRoomB().getY();
+			
+			
 			new Tunneler(x, y, targetX, targetY, grid);
 		}
 	}
@@ -137,7 +145,7 @@ public class SpaceGame extends ApplicationAdapter{
 		Random r = new Random();
 		for(int i=0; i < size; i++){
 			int n = numPath(r.nextInt(100));
-			RoomConnection[] minrc = rooms[i].mininumConnections(49);
+			RoomConnection[] minrc = rooms[i].mininumConnections(rooms.length-1);
 			int num = 0;
 			for(int j=0; num < n; j++){
 				boolean canAdd = true;
@@ -192,6 +200,30 @@ public class SpaceGame extends ApplicationAdapter{
 		return n;
 	}
 	
+	private int maxConnectivity(){
+		int connectivity = 0;
+		int newConnectivity = 0;
+		for(Room room : rooms){
+			newConnectivity = room.getConnectivity();
+			if(newConnectivity > connectivity){
+				connectivity = newConnectivity;
+			}
+		}
+		return connectivity;
+	}
+	
+	private boolean correctConnectivity(){
+		int topConnectivity = maxConnectivity * 7 / 8;
+		int count = 0;
+		for(Room room : rooms){
+			if(room.getConnectivity() >= topConnectivity){
+				count++;
+			}
+		}
+		System.out.print("Count: "+count+" ");
+		return (count <= connections.size() / 8);
+	}
+	
 	private int numPath(int r){
 		if(r < randomDoubleValue){
 			return 2;
@@ -217,12 +249,17 @@ public class SpaceGame extends ApplicationAdapter{
 		blue = regions[0][1];
 		white = regions[1][1];
 		
+		for(int i=0; i<8; i++){
+			shade[i] = regions[2][i];
+		}
+		
 		grid = new char[128][128];
 		boolean verify = true;
 		long curTime = System.nanoTime();
 		while(verify){
 			verify = createWorld();
 		}
+		
 		System.out.println((System.nanoTime()-curTime)/1000000000.0);
 		
 	}
@@ -233,7 +270,7 @@ public class SpaceGame extends ApplicationAdapter{
 		totalFails = 0;
 		connections = new ArrayList<RoomConnection>();
 		blankGrid();
-		addRooms(50);
+		addRooms(grid.length * grid[0].length / 320);
 		addConnections();
 		finalizeConnections();
 		addTunnels();
@@ -251,8 +288,18 @@ public class SpaceGame extends ApplicationAdapter{
 		if(totalConnects >= maxConnects){
 			verify = true;
 		}
-		//verify = false;
-		//randomDoubleValue += 5;
+		else if(connections.size() > rooms.length / 2 * 3){
+			verify = true;
+		}
+		else{
+			//verify = false;
+			//randomDoubleValue += 5;
+			
+			maxConnectivity = maxConnectivity();
+			if(!correctConnectivity()){
+				verify = true;
+			}
+		}
 		System.out.println("Value: "+verify+" "+connections.size());
 		return verify;
 	}
@@ -268,6 +315,17 @@ public class SpaceGame extends ApplicationAdapter{
 		 }
 		
 		batch.begin();
+		
+		
+		for(int i=0; i<rooms.length; i++){
+			for( int xx=rooms[i].getLeft(); xx <= rooms[i].getRight(); xx++){
+				for (int yy=rooms[i].getBottom(); yy <= rooms[i].getTop(); yy++){
+					batch.draw(shade[rooms[i].getConnectivity() * 8 / (maxConnectivity+1)], xx*8, yy*8);
+				}
+			}
+		}
+		
+		
 		for (int i=0; i< grid.length; i++){
 			for (int j=0; j < grid[0].length; j++){
 				if(grid[i][j] == '.'){
@@ -276,9 +334,14 @@ public class SpaceGame extends ApplicationAdapter{
 				else if(grid[i][j] == 'X'){
 					batch.draw(white, i*8, j*8);
 				}
+				else if(grid[i][j] == 'D'){
+					batch.draw(blue, i*8, j*8);
+				}
+				/*
 				else{
 					batch.draw(red, i*8, j*8);
 				}
+				*/
 			}
 		}
 		

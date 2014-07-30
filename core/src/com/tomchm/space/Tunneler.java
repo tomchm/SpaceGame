@@ -5,7 +5,8 @@ import java.util.Random;
 public class Tunneler {
 	private int x, y, targetX, targetY, deltaX = 0, deltaY = 0, direction, prob = 0, movements = 0;
 	private char[][] grid;
-	private boolean foundEmpty = false, didTurn = false, didBranch = false;
+	private boolean foundEmpty = false, didDoorA = false, didDoorB = false;
+	private char prevBore = ' ';
 	
 	public Tunneler(int x, int y, int targetX, int targetY, char[][] grid){
 		this.x = x;
@@ -107,26 +108,45 @@ public class Tunneler {
 	private void move() {
 		
 		if(!outOfBounds()){
+			prevBore = grid[x][y];
+			
 			x += deltaX;
 			y += deltaY;
 			
-			if(grid[x][y] != 'O'){
-				grid[x][y] = 'X';
+			if(!didDoorA && (grid[x][y] == '.' || grid[x][y] == 'X')&& (prevBore == 'O' || prevBore == 'D')){
+				didDoorA = true;
+				for(int i=-1; i<=1; i++){
+					for(int j=-1; j<=1; j++){
+						if(grid[x+i][y+j] == '.'){
+							grid[x+i][y+j] = 'X';
+						}
+					}
+				}
+				grid[x-deltaX][y-deltaY] = 'D';
+			}
+			else if(didDoorA && !didDoorB && (grid[x][y] == 'D' || grid[x][y] == 'O')){
+				didDoorB = true;
+				for(int i=-1; i<=1; i++){
+					for(int j=-1; j<=1; j++){
+						if(grid[x+i][y+j] == '.'){
+							grid[x+i][y+j] = 'X';
+						}
+					}
+				}
+				grid[x][y] = 'D';
+			}
+			else if(grid[x][y] == '.'){
+				for(int i=-1; i<=1; i++){
+					for(int j=-1; j<=1; j++){
+						if(grid[x+i][y+j] == '.'){
+							grid[x+i][y+j] = 'X';
+						}
+					}
+				}
+				
 			}
 		}
 		movements += 1;
-	}
-	
-	private void turn() {
-		Random r = new Random();
-		int flip = r.nextInt(2);
-		if(direction <= 1){
-			direction = 2 + flip;
-		}
-		else {
-			direction = flip;
-		}
-		changeDirection(direction);
 	}
 	
 	private boolean outOfBounds(){
