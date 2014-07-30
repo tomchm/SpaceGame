@@ -3,61 +3,87 @@ package com.tomchm.space;
 import java.util.Random;
 
 public class Tunneler {
-	private int x, y, deltaX = 0, deltaY = 0, direction, prob = 0, movements = 0;
+	private int x, y, targetX, targetY, deltaX = 0, deltaY = 0, direction, prob = 0, movements = 0;
 	private char[][] grid;
 	private boolean foundEmpty = false, didTurn = false, didBranch = false;
 	
-	public Tunneler(int x, int y, char[][] grid){
+	public Tunneler(int x, int y, int targetX, int targetY, char[][] grid){
 		this.x = x;
 		this.y = y;
+		this.targetX = targetX;
+		this.targetY = targetY;
 		this.grid = grid;
+		initialDirection();
 		bore();
 	}
 	
-	private void bore() {
+	private void initialDirection(){
 		Random r = new Random();
-		direction = r.nextInt(4);
-		changeDirection(direction);
-		
-		while (movements < 100){
-			if(outOfBounds()){
-				break;
+		boolean choice = r.nextBoolean();
+		if(targetX > x){
+			if(choice){
+				changeDirection(0);
 			}
-			if(foundEmpty == false){
-				if(grid[x+deltaX][y+deltaY] == 'O'){
-					move();
-				}
-				else {
-					foundEmpty = true;
-					move();
-					move();
-				}
-			}
-			else {
-				
-				if(grid[x+deltaX][y+deltaY] == 'O'){
-					break;
-				}
-				
-				int choice = r.nextInt(100);
-				if(choice < 90-prob){
-					move();
-					prob += 7;
-				}
-				else if(choice < 95){
-					turn();
-					prob = 0;
+			else{
+				if(targetY > y){
+					changeDirection(2);
 				}
 				else{
-					new Tunneler(x, y, grid);
-					prob = 0;
+					changeDirection(3);
 				}
 			}
-		movements++;
+		}
+		else{
+			if(choice){
+				changeDirection(1);
+			}
+			else{
+				if(targetY > y){
+					changeDirection(2);
+				}
+				else{
+					changeDirection(3);
+				}
+			}
 		}
 	}
 	
+	private void bore() {
+		boolean found = false;
+		while(!found && (movements<10000)){
+			
+			if((direction == 0 || direction == 1) && (x == targetX)){
+				if(targetY > y){
+					changeDirection(2);
+				}
+				else if(y > targetY){
+					changeDirection(3);
+				}
+				else{
+					found = true;
+				}
+			}
+			else if((direction == 2 || direction == 3) && (y == targetY)){
+				if(targetX > x){
+					changeDirection(0);
+				}
+				else if(x > targetX){
+					changeDirection(1);
+				}
+				else{
+					found = true;
+				}
+			}
+			else{
+				move();
+			}
+			
+		}
+		//System.out.println("Bore"+movements);
+	}
+	
 	private void changeDirection(int direction){
+		this.direction = direction;
 		switch(direction){
 		case 0:
 			deltaX = 1;
@@ -88,6 +114,7 @@ public class Tunneler {
 				grid[x][y] = 'X';
 			}
 		}
+		movements += 1;
 	}
 	
 	private void turn() {

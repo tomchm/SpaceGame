@@ -1,15 +1,17 @@
 package com.tomchm.space;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-public class SpaceGame extends ApplicationAdapter {
+public class SpaceGame extends ApplicationAdapter{
 	SpriteBatch batch;
 	Texture img;
 	TextureRegion[][] regions;
@@ -17,10 +19,12 @@ public class SpaceGame extends ApplicationAdapter {
 	
 	char[][] grid;
 	Room[] rooms;
-	Tunneler[] tunnels;
 	
-	int totalFails = 0;
+	int totalFails = 0, totalConnects = 0, randomDoubleValue = 15;
+	private static int maxConnects = 2000000;
 	double roomAverageX = 0, roomAverageY = 0;
+	
+	private ArrayList<RoomConnection> connections;
 	
 	
 	private void blankGrid(){
@@ -57,7 +61,7 @@ public class SpaceGame extends ApplicationAdapter {
 			x = 10 + r.nextInt(maxX);
 			y = 10 + r.nextInt(maxY);
 			
-			Room test = new Room(width, length, x, y);
+			Room test = new Room(width, length, x, y, i);
 			
 			for(int j = 0; j < i; j++){
 				Room compareRoom = rooms[j];
@@ -69,7 +73,7 @@ public class SpaceGame extends ApplicationAdapter {
 			}
 		}
 		
-		rooms[i] = new Room(width, length, x, y);
+		rooms[i] = new Room(width, length, x, y, i);
 		
 		reAverageRooms(x, y, i);
 		
@@ -101,18 +105,110 @@ public class SpaceGame extends ApplicationAdapter {
 	}
 	
 	private void addTunnels(){
-		int n = rooms.length;
+		int n = connections.size();
 		Random r = new Random();
-		
 		for(int i=0; i < n; i++){
-			int x = r.nextInt(rooms[i].getWidth()) + rooms[i].getLeft();
-			int y = r.nextInt(rooms[i].getLength()) + rooms[i].getBottom();
-			new Tunneler(x, y, grid);
+			int x = r.nextInt(connections.get(i).getRoomA().getWidth()) + connections.get(i).getRoomA().getLeft();
+			int y = r.nextInt(connections.get(i).getRoomA().getLength()) + connections.get(i).getRoomA().getBottom();
+			int targetX = r.nextInt(connections.get(i).getRoomB().getWidth()) + connections.get(i).getRoomB().getLeft();
+			int targetY = r.nextInt(connections.get(i).getRoomB().getLength()) + connections.get(i).getRoomB().getBottom();
+			new Tunneler(x, y, targetX, targetY, grid);
 		}
 	}
 	
+	private void addConnections(){
+		int size = rooms.length;
+		for(int i=0; i < size; i++){
+			RoomConnection[] rc = new RoomConnection[size-1];
+			int add = 0;
+			for(int j=0; j < size-1; j++){
+				if(i == j){
+					add = 1;
+				}
+				rc[j] = new RoomConnection(rooms[i], rooms[j+add]);
+				
+			}
+			rooms[i].addConnections(rc);
+		}
+	}
+	
+	private void finalizeConnections(){
+		int size = rooms.length;
+		Random r = new Random();
+		for(int i=0; i < size; i++){
+			int n = numPath(r.nextInt(100));
+			RoomConnection[] minrc = rooms[i].mininumConnections(49);
+			int num = 0;
+			for(int j=0; num < n; j++){
+				boolean canAdd = true;
+				
+				for(int k=0; k < connections.size(); k++){
+					if(connections.get(k).compareTo(minrc[j]) == 0){
+						canAdd = false;
+					}
+				}
+				
+				if(canAdd){
+					connections.add(minrc[j]);
+					num++;
+				}
+				
+			}
+		}
+	}
+	
+	private void checkConnections(boolean verify){
+		for(int i=0; i<rooms.length; i++){
+			boolean check[] = new boolean[rooms.length];
+			rooms[i].setConnectivity(checkHelper(rooms[i], check, verify));
+		}
+	}
+	
+	private int checkHelper(Room room, boolean check[], boolean verify){
+		int n = 1;
+		if(totalConnects > maxConnects){
+			return n;
+		}
+		check[room.getID()] = true;
+		for(int i=0; i<connections.size(); i++){
+			Room test = connections.get(i).compareEnd(room);
+			if(test != null){
+				if(!check[test.getID()]){
+					boolean checker[];
+					if(verify){
+						checker = check;
+					}
+					else{
+						checker = new boolean[check.length];
+						for(int j=0; j<check.length; j++){
+							checker[j] = check[j];
+						}
+					}
+					totalConnects += 1;
+					n += checkHelper(test, checker, verify);
+				}
+			}
+		}
+		return n;
+	}
+	
+	private int numPath(int r){
+		if(r < randomDoubleValue){
+			return 2;
+		}
+		else if( r < 95){
+			return 1;
+		}
+		return 3;
+		
+	}
+	
+	
+	
 	@Override
 	public void create () {
+		
+		
 		batch = new SpriteBatch();
 		img = new Texture("tex_box.png");
 		regions = TextureRegion.split(img, 8, 8);
@@ -122,16 +218,55 @@ public class SpaceGame extends ApplicationAdapter {
 		white = regions[1][1];
 		
 		grid = new char[128][128];
-		blankGrid();
-		addRooms(75);
-		addTunnels();
+		boolean verify = true;
+		long curTime = System.nanoTime();
+		while(verify){
+			verify = createWorld();
+		}
+		System.out.println((System.nanoTime()-curTime)/1000000000.0);
+		
 	}
 	
-
+	private boolean createWorld(){
+		
+		totalConnects = 0;
+		totalFails = 0;
+		connections = new ArrayList<RoomConnection>();
+		blankGrid();
+		addRooms(50);
+		addConnections();
+		finalizeConnections();
+		addTunnels();
+		checkConnections(true);
+		boolean verify = false;
+		for(int i=0; i<rooms.length; i++){
+			//System.out.println(i+":"+rooms[i].getConnectivity());
+			if(rooms[i].getConnectivity() < rooms.length){
+				verify = true;
+				break;
+			}
+			
+		}
+		checkConnections(false);
+		if(totalConnects >= maxConnects){
+			verify = true;
+		}
+		//verify = false;
+		//randomDoubleValue += 5;
+		System.out.println("Value: "+verify+" "+connections.size());
+		return verify;
+	}
+	
+	
 	@Override
 	public void render () {
 		Gdx.gl.glClearColor(1, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		
+		 if(Gdx.input.isKeyPressed(Input.Keys.SPACE)){
+			 createWorld();
+		 }
+		
 		batch.begin();
 		for (int i=0; i< grid.length; i++){
 			for (int j=0; j < grid[0].length; j++){
@@ -147,7 +282,7 @@ public class SpaceGame extends ApplicationAdapter {
 			}
 		}
 		
-		System.out.println(totalFails);
+		//System.out.println(connections.size());
 		batch.end();
 	}
 	

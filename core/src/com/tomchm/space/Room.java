@@ -1,17 +1,29 @@
 package com.tomchm.space;
 
+import java.util.Arrays;
+
 public class Room {
-	private int width, length, x, y;
+	private int width, length, x, y, id;
 	
 	private int left, right, top, bottom;
 	
-	public Room(int width, int length, int x, int y){
+	private int connectivity;
+	
+	private RoomConnection[] connections;
+	
+	public Room(int width, int length, int x, int y, int id){
 		this.width = width;
 		this.length = length;
 		this.x = x;
 		this.y = y;
+		this.id = id;
 		
+		connectivity = 0;
 		assignBorders();
+	}
+	
+	public int getID(){
+		return id;
 	}
 	
 	private void assignBorders(){
@@ -47,6 +59,38 @@ public class Room {
 	public int getLength() {
 		return length;
 	}
+	
+	public int getX() {
+		return x;
+	}
+
+	public int getY() {
+		return y;
+	}
+	
+	public void setConnectivity(int connectivity){
+		this.connectivity = connectivity;
+	}
+	
+	public int getConnectivity(){
+		return connectivity;
+	}
+	
+
+	
+	public void addConnections(RoomConnection[] rc){
+		connections = rc;
+	}
+	
+	public RoomConnection[] mininumConnections(int n){
+		RoomConnection[] minrc = new RoomConnection[n];
+		Arrays.sort(connections);
+		for(int i=0; i<n; i++){
+			minrc[i] = connections[i];
+		}
+		return minrc;
+	}
+	
 	public boolean noOverlap(Room room){
 		if(room.left <= right+1 && room.left >= left-1){
 			if(room.bottom >= bottom-1 && room.bottom <= top+1){
