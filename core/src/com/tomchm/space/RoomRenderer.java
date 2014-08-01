@@ -5,60 +5,48 @@ public class RoomRenderer {
 	
 	
 	public static void renderRoom(Room room, char[][] grid, int[][] renderGrid){
-		int t = 1, b = 1;
+		int l = 1, r = 1;
 		if(grid[room.getLeft()][room.getBottom()] == 'D'){
-			renderGrid[room.getLeft()][room.getBottom()] = wall;
-			renderGrid[room.getLeft()+1][room.getBottom()] = wall;
-			renderGrid[room.getLeft()][room.getBottom()+1] = floor;
-			renderGrid[room.getLeft()][room.getBottom()+2] = bottomWall;
-			b = 2;
+			renderGrid[room.getLeft()][room.getBottom()] = bottomWall;
+			renderGrid[room.getLeft()+1][room.getBottom()] = floor;
+			l = 2;
 		}
 		else{
 			renderGrid[room.getLeft()][room.getBottom()] = bottomWall;
 			renderGrid[room.getLeft()+1][room.getBottom()] = wall;
-			renderGrid[room.getLeft()][room.getBottom()+1] = sideWall;
 		}
 		
 		if(grid[room.getRight()][room.getBottom()] == 'D'){
-			renderGrid[room.getRight()][room.getBottom()] = wall;
-			renderGrid[room.getRight()-1][room.getBottom()] = wall;
-			renderGrid[room.getRight()][room.getBottom()+1] = floor;
-			renderGrid[room.getRight()][room.getBottom()+2] = bottomWall;
-			b = 2;
+			renderGrid[room.getRight()][room.getBottom()] = bottomWall;
+			renderGrid[room.getRight()-1][room.getBottom()] = floor;
+			r = 2;
 		}
 		else{
 			renderGrid[room.getRight()][room.getBottom()] = bottomWall;
 			renderGrid[room.getRight()-1][room.getBottom()] = wall;
-			renderGrid[room.getRight()][room.getBottom()+1] = sideWall;
 		}
 		
 		if(grid[room.getLeft()][room.getTop()] == 'D'){
-			renderGrid[room.getLeft()][room.getTop()] = wall;
-			renderGrid[room.getLeft()+1][room.getTop()] = wall;
-			renderGrid[room.getLeft()][room.getTop()-1] = floor;
-			renderGrid[room.getLeft()][room.getTop()-2] = topWall;
-			t = 2;
+			renderGrid[room.getLeft()][room.getTop()] = topWall;
+			renderGrid[room.getLeft()+1][room.getTop()] = floor;
+			l = 2;
 		}
 		else{
 			renderGrid[room.getLeft()][room.getTop()] = topWall;
 			renderGrid[room.getLeft()+1][room.getTop()] = wall;
-			renderGrid[room.getLeft()][room.getTop()-1] = sideWall;
 		}
 		
 		if(grid[room.getRight()][room.getTop()] == 'D'){
-			renderGrid[room.getRight()][room.getTop()] = wall;
-			renderGrid[room.getRight()-1][room.getTop()] = wall;
-			renderGrid[room.getRight()][room.getTop()-1] = floor;
-			renderGrid[room.getRight()][room.getTop()-2] = topWall;
-			t = 2;
+			renderGrid[room.getRight()][room.getTop()] = topWall;
+			renderGrid[room.getRight()-1][room.getTop()] = floor;
+			r = 2;
 		}
 		else{
 			renderGrid[room.getRight()][room.getTop()] = topWall;
 			renderGrid[room.getRight()-1][room.getTop()] = wall;
-			renderGrid[room.getRight()][room.getTop()-1] = sideWall;
 		}
 		
-		for(int i=room.getLeft()+1;i<=room.getRight()-1;i++){
+		for(int i=room.getLeft()+l;i<=room.getRight()-r;i++){
 			if(grid[i][room.getTop()] == 'D'){
 				renderGrid[i][room.getTop()] = floor;
 			}
@@ -74,7 +62,7 @@ public class RoomRenderer {
 			}
 		}
 		
-		for(int i=room.getTop()-t;i>=room.getBottom()+b;i--){
+		for(int i=room.getTop()-1;i>=room.getBottom()+1;i--){
 			if(grid[room.getLeft()][i] == 'D'){
 				if(grid[room.getLeft()][i+1] == 'O'){
 					renderGrid[room.getLeft()][i+1] = bottomWall;

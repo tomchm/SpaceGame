@@ -3,16 +3,19 @@ package com.tomchm.space;
 import java.util.Random;
 
 public class Tunneler {
+	private Room roomA, roomB;
 	private int x, y, targetX, targetY, deltaX = 0, deltaY = 0, direction, prob = 0, movements = 0;
 	private char[][] grid;
 	private boolean foundEmpty = false, didDoorA = false, didDoorB = false;
 	private char prevBore = ' ';
 	
-	public Tunneler(int x, int y, int targetX, int targetY, char[][] grid){
-		this.x = x;
-		this.y = y;
-		this.targetX = targetX;
-		this.targetY = targetY;
+	public Tunneler(Room roomA, Room roomB, char[][] grid){
+		this.roomA = roomA;
+		this.roomB = roomB;
+		x = roomA.getX();
+		y = roomA.getY();
+		targetX = roomB.getX();
+		targetY = roomB.getY();
 		this.grid = grid;
 		initialDirection();
 		bore();
@@ -122,7 +125,11 @@ public class Tunneler {
 						}
 					}
 				}
-				grid[x-deltaX][y-deltaY] = 'D';
+				if(prevBore == 'O'){
+					grid[x-deltaX][y-deltaY] = 'D';
+					roomA.addDoor(x-deltaX, y-deltaY);
+				}
+				
 			}
 			else if(didDoorA && !didDoorB && (grid[x][y] == 'D' || grid[x][y] == 'O')){
 				didDoorB = true;
@@ -133,7 +140,11 @@ public class Tunneler {
 						}
 					}
 				}
-				grid[x][y] = 'D';
+				if(grid[x][y] == 'O'){
+					grid[x][y] = 'D';
+					roomB.addDoor(x, y);
+				}
+				
 			}
 			else if(grid[x][y] == '.'){
 				for(int i=-1; i<=1; i++){

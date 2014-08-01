@@ -1,15 +1,19 @@
 package com.tomchm.space;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 
 public class Room {
 	private int width, length, x, y, id;
 	
 	private int left, right, top, bottom;
 	
-	private int connectivity;
+	private int connectivity, doors = 0, overlap = 4;
 	
 	private RoomConnection[] connections;
+	private ArrayList<Door> doorList = new ArrayList<Door>();
+	
 	
 	public Room(int width, int length, int x, int y, int id){
 		this.width = width;
@@ -76,7 +80,9 @@ public class Room {
 		return connectivity;
 	}
 	
-
+	public void addDoor(int x, int y){
+		doorList.add(new Door(x,y));
+	}
 	
 	public void addConnections(RoomConnection[] rc){
 		connections = rc;
@@ -92,42 +98,74 @@ public class Room {
 	}
 	
 	public boolean noOverlap(Room room){
-		if(room.left <= right+1 && room.left >= left-1){
-			if(room.bottom >= bottom-1 && room.bottom <= top+1){
+		if(room.left <= right+overlap && room.left >= left-overlap){
+			if(room.bottom >= bottom-overlap && room.bottom <= top+overlap){
 				return false;
 			}
-			else if(room.top >= bottom-1 && room.top <= top+1){
-				return false;
-			}
-		}
-		
-		if(room.right <= right+1 && room.right >= left-1){
-			if(room.bottom >= bottom-1 && room.bottom <= top+1){
-				return false;
-			}
-			else if(room.top >= bottom-1 && room.top <= top+1){
+			else if(room.top >= bottom-overlap && room.top <= top+overlap){
 				return false;
 			}
 		}
 		
-		if(left <= room.right+1 && left >= room.left-1){
-			if(bottom >= room.bottom-1 && bottom <= room.top+1){
+		if(room.right <= right+overlap && room.right >= left-overlap){
+			if(room.bottom >= bottom-overlap && room.bottom <= top+overlap){
 				return false;
 			}
-			else if(top >= room.bottom-1 && top <= room.top+1){
+			else if(room.top >= bottom-overlap && room.top <= top+overlap){
 				return false;
 			}
 		}
 		
-		if(right <= room.right+1 && right >= room.left-1){
-			if(bottom >= room.bottom-1 && bottom <= room.top+1){
+		if(left <= room.right+overlap && left >= room.left-overlap){
+			if(bottom >= room.bottom-overlap && bottom <= room.top+overlap){
 				return false;
 			}
-			else if(top >= room.bottom-1 && top <= room.top+1){
+			else if(top >= room.bottom-overlap && top <= room.top+overlap){
+				return false;
+			}
+		}
+		
+		if(right <= room.right+overlap && right >= room.left-overlap){
+			if(bottom >= room.bottom-overlap && bottom <= room.top+overlap){
+				return false;
+			}
+			else if(top >= room.bottom-overlap && top <= room.top+overlap){
 				return false;
 			}
 		}
 		
 		return true;
 	}
+	
+	public void removeDoors(char[][] grid){
+		Random r = new Random();
+		int choice = r.nextInt(3)+1;
+		while(doorList.size()>choice){
+			int doorChoice = r.nextInt(doorList.size());
+			doorList.get(doorChoice).removeDoor(grid);
+			doorList.remove(doorChoice);
+		}             
+		for(int i=0;i<doorList.size();i++){
+			doorList.get(i).replaceDoor(grid);
+		}
+	}
+	
+	private class Door{
+		int x, y;
+		
+		Door(int x, int y){
+			this.x = x;
+			this.y = y;
+		}
+		
+		void removeDoor(char[][] grid){
+			grid[x][y] = 'O';
+		}
+		
+		void replaceDoor(char[][] grid){
+			grid[x][y] = 'D';
+		}
+	}
 }
+
+

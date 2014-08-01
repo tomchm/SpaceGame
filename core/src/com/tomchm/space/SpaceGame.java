@@ -13,7 +13,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class SpaceGame extends ApplicationAdapter{
 	
-	int worldLength = 64, worldWidth = 64;
+	int worldLength = 96, worldWidth = 96;
+	int roomMax = 10, roomMin = 5;
 	
 	SpriteBatch batch;
 	Texture img;
@@ -41,31 +42,33 @@ public class SpaceGame extends ApplicationAdapter{
 		}
 	}
 	
-	private void addRooms(int n){
+	private boolean addRooms(int n){
 		rooms = new Room[n];
-		
 		for (int i=0; i < n; i++){
-			addRectangle(i);
+			if(!addRectangle(i)){
+				return false;
+			}
 		}
+		return true;
 	}
 	
-	private void addRectangle(int i){
+	private boolean addRectangle(int i){
 		
 		Random r = new Random();
-		int maxX = grid.length-2*10;
-		int maxY = grid[0].length-2*10;
+		int maxX = grid.length-2*roomMax;
+		int maxY = grid[0].length-3*roomMax;
 		
 		int x = 0, y = 0;
 		
 		boolean findEmpty = true;
-		int width = triDist(5, 10);
-		int length = triDist(5, 10);
+		int width = triDist(roomMin, roomMax);
+		int length = triDist(roomMin, roomMax);
 		
 		while(findEmpty && totalFails < 10000000){
 			findEmpty = false;
 			
-			x = 10 + r.nextInt(maxX);
-			y = 10 + r.nextInt(maxY);
+			x = roomMax + r.nextInt(maxX);
+			y = 2*roomMax + r.nextInt(maxY);
 			
 			Room test = new Room(width, length, x, y, i);
 			for(int j = 0; j < i; j++){
@@ -77,14 +80,27 @@ public class SpaceGame extends ApplicationAdapter{
 				}
 			}
 		}
+		
+		if(totalFails >= 10000000){
+			return false;
+		}
+
 		rooms[i] = new Room(width, length, x, y, i);
 		
 		reAverageRooms(x, y, i);
+		
 		for( int xx=rooms[i].getLeft(); xx <= rooms[i].getRight(); xx++){
 			for (int yy=rooms[i].getBottom(); yy <= rooms[i].getTop(); yy++){
-				grid[xx][yy] = 'O';
+				try{
+					grid[xx][yy] = 'O';
+				}
+				catch(Exception e){
+					System.out.println(totalFails + "Error found."+xx+","+yy);
+				}
 			}
 		}
+		return true;
+		
 	}
 	
 	private int triDist(int min, int max){
@@ -116,13 +132,16 @@ public class SpaceGame extends ApplicationAdapter{
 			//int targetX = r.nextInt(connections.get(i).getRoomB().getWidth()) + connections.get(i).getRoomB().getLeft();
 			//int targetY = r.nextInt(connections.get(i).getRoomB().getLength()) + connections.get(i).getRoomB().getBottom();
 			
-			int x = connections.get(i).getRoomA().getX();
-			int y = connections.get(i).getRoomA().getY();
-			int targetX = connections.get(i).getRoomB().getX();
-			int targetY = connections.get(i).getRoomB().getY();
+			new Tunneler(connections.get(i).getRoomA(), connections.get(i).getRoomB(), grid);
+		}
+	}
+	
+	private void addPavers(){
+		int n = connections.size();
+		Random r = new Random();
+		for(int i=0; i < n; i++){
 			
-			
-			new Tunneler(x, y, targetX, targetY, grid);
+			new Paver(connections.get(i).getRoomA(), grid, roomMax);
 		}
 	}
 	
@@ -281,36 +300,41 @@ public class SpaceGame extends ApplicationAdapter{
 		totalFails = 0;
 		connections = new ArrayList<RoomConnection>();
 		blankGrid();
-		addRooms(grid.length * grid[0].length / 320);
+		if(!addRooms(grid.length * grid[0].length / 450)){
+			return true; 
+		}
 		addConnections();
 		finalizeConnections();
-		addTunnels();
+		//addTunnels();
+		addPavers();
 		checkConnections(true);
 		boolean verify = false;
+		
 		for(int i=0; i<rooms.length; i++){
-			//System.out.println(i+":"+rooms[i].getConnectivity());
 			if(rooms[i].getConnectivity() < rooms.length){
 				verify = true;
 				break;
 			}
 			
 		}
+		
 		checkConnections(false);
 		if(totalConnects >= maxConnects){
 			verify = true;
 		}
+		
 		else if(connections.size() > rooms.length / 2 * 3){
 			verify = true;
 		}
 		else{
-			//verify = false;
-			//randomDoubleValue += 5;
-			
 			maxConnectivity = maxConnectivity();
+			/*
 			if(!correctConnectivity()){
 				verify = true;
 			}
+			*/
 		}
+		
 		System.out.println("Value: "+verify+" "+connections.size());
 		return verify;
 	}
@@ -328,6 +352,7 @@ public class SpaceGame extends ApplicationAdapter{
 		}
 		
 		for(Room room : rooms){
+			room.removeDoors(grid);
 			RoomRenderer.renderRoom(room, grid, renderGrid);
 		}
 	}
@@ -338,7 +363,10 @@ public class SpaceGame extends ApplicationAdapter{
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		 if(Gdx.input.isKeyPressed(Input.Keys.SPACE)){
-			 createWorld();
+			 boolean verify = true;
+			 while(verify){
+					verify = createWorld();
+				}
 			 drawWorld();
 		 }
 		
